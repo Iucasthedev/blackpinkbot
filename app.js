@@ -8,19 +8,49 @@ let secret = {
   access_token_secret: credentials.accessSecret
 }
 
-var params = {
-  q: '',
-  count: 10
-}
+let toogleTweet = true;
+let canTweet = true;
 
 let Twitter = new TwitterPackage(secret);
 
-/*Twitter.get('users/search', params, function(err, data, res) {
-    let fer = data[0].id_str;
-    Twitter.get('statuses/user_timeline', {id: fer}, function(err, tweets, res) {
-       tweets.forEach((tweet) => {
-          Twitter.post('favorites/create', {id: tweet.id_str});
-       })
-    });
 
-});*/
+  Twitter.stream('statuses/filter', {track: '#ForaMarcela'}, function(stream) {
+    stream.on('data', function(tweet) {
+      let text = tweet.text.toString().toLowerCase();
+      if (text.indexOf('#foraflay') === -1 
+      && text.indexOf('#foraflayslane') === -1
+      && text.indexOf('#forababu') === -1
+      ) {
+        let id = tweet.id_str;
+          if (toogleTweet && canTweet) {
+            canTweet = false;
+            Twitter.post('statuses/retweet', {id: id},  function(error, tweetReply, response){
+              console.log('retweetou')
+            });
+          } else if (canTweet) {
+            canTweet = false;
+            let tweet = randomString(0) + ' ' + '#ForaMarcela';
+            Twitter.post('statuses/update', {status: tweet},  function(error, tweetReply, response){
+              console.log('tweetou')
+            });
+          }
+      }
+    });
+    setInterval(() => {
+      canTweet = true;
+      toogleTweet = !toogleTweet;
+    }, 5000);
+
+  });
+
+clearInterval();
+
+function randomString() {
+  var result           = '';
+  var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  var charactersLength = characters.length;
+  for ( var i = 0; i < 5; i++ ) {
+     result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+}
